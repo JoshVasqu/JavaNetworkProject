@@ -37,40 +37,40 @@ public class HTTPServer {
         System.out.println("http://" + serverIp + ":" + serverPort);
         while(running) {
             Socket client = connectClient();
-            sendDataToClient(client);
-            printDataFromClient(client);
+            if (client == null) continue;
+            new Thread(() -> handleClient(client));
         }
         disconnectAll();
     }
 
-    public void sendDataToClient(Socket clientSocket) throws IOException{
+    private void handleClient(Socket client){
         try {
-            Date today = new Date();
-            String httpResponse = "HTTP/1.1 200 OK\r\n\r\n" + today;
-            clientSocket.getOutputStream().write(httpResponse.getBytes("UTF-8"));
-        } catch(IOException i) {
-            System.out.println(i);
-            return;
-        }
-    }
-
-    public void printDataFromClient(Socket clientSocket) {
-        try {
-            InputStreamReader isr = new InputStreamReader(clientSocket.getInputStream());
-            BufferedReader reader = new BufferedReader(isr);
-            String line = reader.readLine();
-            while (!line.isEmpty()) {
-                System.out.println(line);
-                line = reader.readLine();
-            }
-            isr.close();
-            reader.close();
+            printDataFromClient(client);
+            sendDataToClient(client);
         } catch (IOException i) {
             System.out.println(i);
         }
     }
 
-    private Socket connectClient() throws IOException{
+    public void sendDataToClient(Socket clientSocket) throws IOException{
+        Date today = new Date();
+        String httpResponse = "HTTP/1.1 200 OK\r\n\r\n" + today;
+        clientSocket.getOutputStream().write(httpResponse.getBytes("UTF-8"));
+    }
+
+    public void printDataFromClient(Socket clientSocket) throws IOException{
+        InputStreamReader isr = new InputStreamReader(clientSocket.getInputStream());
+        BufferedReader reader = new BufferedReader(isr);
+        String line = reader.readLine();
+        while (!line.isEmpty()) {
+            System.out.println(line);
+            line = reader.readLine();
+        }
+        isr.close();
+        reader.close();
+    }
+
+    private Socket connectClient(){
         try {
             Socket clientSocket = serverSocket.accept();
             String clientId = UUID.randomUUID().toString();
@@ -82,7 +82,7 @@ public class HTTPServer {
         }
     }
 
-    private void disconnectClient(Socket clientSocket) throws IOException{
+    private void disconnectClient(Socket clientSocket){
         try {
             clientSocket.close();
         } catch (IOException i) {
